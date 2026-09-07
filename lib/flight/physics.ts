@@ -139,7 +139,7 @@ export function step(s:FlightState,input:Input,dt:number) {
    s.y=2.8;s.vs=0;s.onGround=true;
   }
  }
- if(s.touchdown){s.pitch=Math.max(0,s.pitch-dt*.025);if(s.pitch<.025){if(s.touchdown.noseTime===null&&s.elapsed>s.touchdown.mainTime)recordContact(s,'nosewheel',.18,0,-13);s.noseDown=true;s.touchdown.noseTime??=s.elapsed;}if(s.speed<1){s.phase='Complete';s.running=false;}}
+ if(s.touchdown){s.pitch=Math.max(0,s.pitch-dt*.025);if(s.pitch<.025){if(s.touchdown.noseTime===null&&s.elapsed>s.touchdown.mainTime)recordContact(s,'nosewheel',.18,0,-13);s.noseDown=true;s.touchdown.noseTime??=s.elapsed;}if(s.speed<1){s.speed=0;s.phase='Complete';s.running=false;}}
  if(s.onGround&&!runwayAt(s.x,s.z)&&s.speed>35&&s.running){recordContact(s,'excursion',s.speed/100);crash(s,'The aircraft overran the runway.');}
  s.warning=s.stall?'STALL · LOWER NOSE':!s.gear&&s.y<160&&!s.onGround&&s.vs<-.5?'GEAR · TOO LOW':s.speed*KT>330?'OVERSPEED':s.speed*KT>132&&s.onGround&&!s.touchdown?'ROTATE':'';
  navigation(s);

@@ -1,4 +1,5 @@
 import { idleInput, type Input } from './physics';
+import type {PilotInput} from './pilot';
 export class FlightInput {
  keys=new Set<string>(); connected=false;
  constructor(private action:(key:string)=>void){window.addEventListener('keydown',this.down);window.addEventListener('keyup',this.up);window.addEventListener('blur',this.clear);}
@@ -8,5 +9,6 @@ export class FlightInput {
  const pad=navigator.getGamepads?.();const p=pad&&Array.from(pad).find(Boolean);this.connected=!!p;
  if(p){const axis=(n:number)=>Math.abs(p.axes[n]||0)>.12?p.axes[n]:0;i.roll+=axis(0);i.pitch+=axis(1);i.yaw+=axis(2);i.throttle+=(p.buttons[7]?.value||0)-(p.buttons[6]?.value||0);i.brake ||= !!p.buttons[0]?.pressed;}
  return i;}
+ readPilot():PilotInput{const k=this.keys;const i={forward:Number(k.has('KeyW'))-Number(k.has('KeyS')),right:Number(k.has('KeyD'))-Number(k.has('KeyA')),turn:Number(k.has('ArrowRight'))-Number(k.has('ArrowLeft')),look:Number(k.has('ArrowUp'))-Number(k.has('ArrowDown')),sprint:k.has('ShiftLeft')||k.has('ShiftRight')};const p=Array.from(navigator.getGamepads?.()||[]).find(Boolean);this.connected=!!p;if(p){const axis=(n:number)=>Math.abs(p.axes[n]||0)>.15?p.axes[n]:0;i.forward-=axis(1);i.right+=axis(0);i.turn+=axis(2);i.look-=axis(3);i.sprint ||= !!p.buttons[0]?.pressed;}return i;}
  dispose(){window.removeEventListener('keydown',this.down);window.removeEventListener('keyup',this.up);window.removeEventListener('blur',this.clear);}
 }
