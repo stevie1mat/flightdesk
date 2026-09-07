@@ -3,7 +3,7 @@ import type {FlightState} from './physics';
 import {AirportPeople} from './people';
 import type {PilotState} from './pilot';
 const mat=(color:number)=>new THREE.MeshStandardMaterial({color,roughness:.65});
-function block(g:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;g.add(o);return o;}
+function block(g:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(h<=.2&&y<=.3)o.userData.walkingSurface=true;g.add(o);return o;}
 function sign(g:THREE.Object3D,text:string,x:number,y:number,z:number,w=8){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d')!;ctx.fillStyle='#102f3b';ctx.fillRect(0,0,1024,256);ctx.fillStyle='#e7c393';ctx.font='600 66px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,128,950);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const o=new THREE.Mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshBasicMaterial({map:t}));o.position.set(x,y,z);g.add(o);}
 export class PilotWorld{
  group=new THREE.Group();private people:AirportPeople;
