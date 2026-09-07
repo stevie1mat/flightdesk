@@ -9,14 +9,18 @@ export const PLANS = [
  {name:'Sound corridor', description:'Direct · 14 NM · ~5 min', points:[{name:'SOUND',x:0,z:-6500},{name:'HARBOR',x:0,z:-13000},{name:'PAE36',x:0,z:-20000}]},
  {name:'Coastal departure', description:'Scenic · 15 NM · ~6 min', points:[{name:'COAST',x:-2400,z:-6000},{name:'HARBOR',x:-1800,z:-11000},{name:'PAE36',x:0,z:-19000}]}
 ];
+export type ContactKind='touchdown'|'nosewheel'|'tailstrike'|'wingstrike'|'belly'|'impact'|'excursion';
+export type ContactEvent={id:number;kind:ContactKind;x:number;y:number;z:number;speed:number;severity:number;paved:boolean};
 export type Phase = 'Preflight'|'Takeoff'|'Climb'|'Cruise'|'Approach'|'Landing'|'Rollout'|'Complete'|'Crashed';
 export type FlightState = ReturnType<typeof initialState>;
 export function initialState(plan=0) {
- return {x:0,y:2.8,z:1100,speed:0,vs:0,pitch:0,bank:0,heading:0,throttle:0,n1:20,flaps:1,gear:true,gearPosition:1,brake:false,reverse:false,onGround:true,noseDown:true,phase:'Preflight' as Phase,elapsed:0,running:false,paused:false,ap:false,altHold:false,hdgHold:false,approach:false,assist:false,targetAlt:2500,targetHeading:0,waypoint:0,plan,weather:'Clear',time:16.4,cycle:false,turbulence:0.3,wind:0,stall:false,warning:'',touchdown:null as null|{rate:number,offset:number,score:number,mainTime:number,noseTime:number|null},distance:0,eta:0,localizer:0,glideslope:0,gamepad:false,crashReason:'',fps:60};
+ return {contact:null as ContactEvent|null,contactSequence:0,impactAge:0,x:0,y:2.8,z:1100,speed:0,vs:0,pitch:0,bank:0,heading:0,controlPitch:0,controlRoll:0,controlYaw:0,throttle:0,n1:20,flaps:1,gear:true,gearPosition:1,brake:false,reverse:false,onGround:true,noseDown:true,phase:'Preflight' as Phase,elapsed:0,running:false,paused:false,ap:false,altHold:false,hdgHold:false,approach:false,assist:false,targetAlt:2500,targetHeading:0,waypoint:0,plan,weather:'Clear',time:9.4,cycle:false,turbulence:0.3,wind:0,stall:false,warning:'',touchdown:null as null|{rate:number,offset:number,score:number,mainTime:number,noseTime:number|null},distance:0,eta:0,localizer:0,glideslope:0,gamepad:false,crashReason:'',fps:60};
 }
 export type Input = {pitch:number;roll:number;yaw:number;throttle:number;brake:boolean};
 export const idleInput = ():Input => ({pitch:0,roll:0,yaw:0,throttle:0,brake:false});
 export function runwayAt(x:number,z:number) {return Math.abs(x)<30 && ((z<1500&&z>-1500)||(z<-23500&&z>-26500));}
+function recordContact(s:FlightState,kind:ContactKind,severity:number,localX=0,localZ=0){s.contact={id:++s.contactSequence,kind,x:s.x+localX*Math.cos(s.heading)-localZ*Math.sin(s.heading),y:.3,z:s.z+localX*Math.sin(s.heading)+localZ*Math.cos(s.heading),speed:s.speed,severity:clamp(severity,.15,1),paved:runwayAt(s.x,s.z)};}
+function crash(s:FlightState,reason:string){s.phase='Crashed';s.crashReason=reason;s.running=false;s.impactAge=0;s.onGround=true;s.vs=0;s.y=2.8;}
 export function navigation(s:FlightState) {
  const remaining=Math.hypot(s.x,s.z+23700);
  s.distance=remaining/1852;s.eta=s.speed>10?remaining/s.speed:0;
@@ -24,7 +28,8 @@ export function navigation(s:FlightState) {
  s.glideslope=clamp((Math.max(0,s.z+23700)*Math.tan(3*DEG)+2.8-s.y)/50,-2.5,2.5);
 }
 export function step(s:FlightState,input:Input,dt:number) {
- if(!s.running||s.paused||s.phase==='Complete'||s.phase==='Crashed'){navigation(s);return;}
+ if(s.phase==='Crashed'){if(!s.paused){dt=Math.min(dt,.04);s.impactAge+=dt;s.speed=Math.max(0,s.speed-dt*18);s.x+=Math.sin(s.heading)*s.speed*dt;s.z-=Math.cos(s.heading)*s.speed*dt;}navigation(s);return;}
+ if(!s.running||s.paused||s.phase==='Complete'){navigation(s);return;}
  dt=Math.min(dt,0.04);s.elapsed+=dt;if(s.cycle)s.time=(s.time+dt/180)%24;
  s.throttle=clamp(s.throttle+input.throttle*dt*.23,0,1);
  s.gearPosition+=(Number(s.gear)-s.gearPosition)*Math.min(1,dt*.8);
@@ -33,7 +38,7 @@ export function step(s:FlightState,input:Input,dt:number) {
  const approachDistance=s.z+23700;
  if(s.assist){
   s.ap=true;
-  if(s.onGround && !s.touchdown){s.throttle=1;s.flaps=1;yaw=clamp(-s.x*.15-s.heading*4,-1,1);pitch=s.speed>68?.8:0;}
+  if(s.onGround && !s.touchdown){s.throttle=1;s.flaps=1;yaw=clamp(-s.x*.15-s.heading*4,-1,1);pitch=s.speed>68?clamp((.185-s.pitch)*5,0,.8):0;}
   else if(!s.touchdown){
    s.gear=approachDistance<6000;
    s.flaps=approachDistance<6500?3:approachDistance<10000?2:s.y<180?1:0;
@@ -66,6 +71,7 @@ export function step(s:FlightState,input:Input,dt:number) {
    pitch=clamp((desiredPitch-s.pitch)*5,-1,1);
   }
  }
+ s.controlPitch=pitch;s.controlRoll=roll;s.controlYaw=yaw;
  s.bank=clamp(s.bank+(roll*.55-s.bank*.25)*dt,-1.15,1.15);
  s.pitch=clamp(s.pitch+(pitch*.20-s.pitch*.045)*dt,-.35,.38);
  if(s.onGround){s.bank*=Math.exp(-dt*4);if(s.speed<65&&!s.touchdown)s.pitch=Math.min(s.pitch,.015);s.heading+=yaw*.22*clamp(s.speed/25,0,1)*dt;}
@@ -95,21 +101,31 @@ export function step(s:FlightState,input:Input,dt:number) {
  s.x+=(Math.sin(s.heading)*s.speed+(s.onGround?wind*.04:wind))*dt;
  s.z-=Math.cos(s.heading)*s.speed*dt;
  if(s.running&&s.phase==='Preflight'&&s.speed>1)s.phase='Takeoff';
+ // Contact points follow the same pitch/roll pose as the rendered 737.
+ if(!s.touchdown&&s.speed>8){
+  const bodyY=s.y+.91+s.gearPosition*(3.2*Math.sin(s.pitch)+3.5*(Math.cos(s.pitch)-1));
+  const height=(x:number,y:number,z:number)=>bodyY+(-x*Math.sin(s.bank)+y*Math.cos(s.bank))*Math.cos(s.pitch)-z*Math.sin(s.pitch);
+  const lowWing=s.bank>0?16.6:-16.6;
+  const kind:ContactKind|null=s.onGround&&s.gearPosition<.55?'belly':height(0,-.5,17)<.23?'tailstrike':height(lowWing,.43,4.48)<.23?'wingstrike':null;
+  if(kind){recordContact(s,kind,.4+s.speed/180,kind==='wingstrike'?lowWing:0,kind==='tailstrike'?17:kind==='wingstrike'?4.48:0);crash(s,kind==='tailstrike'?'The tail struck the ground during rotation.':kind==='wingstrike'?'A wing struck the ground.':'The landing gear collapsed or retracted during the ground roll.');navigation(s);return;}
+ }
  if(!s.onGround){
   if(s.y>600&&s.phase==='Climb')s.phase='Cruise';
   if(approachDistance<8500&&s.z<-5000)s.phase=s.y<18?'Landing':'Approach';
   if(s.y<=2.8){
    const rate=Math.abs(s.vs)*196.85;
-   if(!s.gear||!runwayAt(s.x,s.z)||rate>1000||Math.abs(s.bank)>.18||Math.abs(s.heading)>.35){
-    s.phase='Crashed';s.crashReason=!s.gear?'Landing gear was retracted.':!runwayAt(s.x,s.z)?'The aircraft touched down outside the runway.':rate>1000?'The descent rate exceeded the landing limit.':'Touchdown attitude was outside safe limits.';s.running=false;
+   if(!s.gear||s.gearPosition<.9||!runwayAt(s.x,s.z)||rate>1000||Math.abs(s.bank)>.18||Math.abs(s.heading)>.35){
+    recordContact(s,!s.gear||s.gearPosition<.9?'belly':'impact',Math.abs(s.vs)/8+s.speed/250);
+    crash(s,!s.gear||s.gearPosition<.9?'Landing gear was retracted.':!runwayAt(s.x,s.z)?'The aircraft touched down outside the runway.':rate>1000?'The descent rate exceeded the landing limit.':'Touchdown attitude was outside safe limits.');
    }else{
+    recordContact(s,'touchdown',rate/800,0,3.2);
     s.touchdown={rate,offset:Math.abs(s.x),score:Math.round(clamp(100-rate*.07-Math.abs(s.x)*1.3,0,100)),mainTime:s.elapsed,noseTime:null};s.phase='Rollout';
    }
    s.y=2.8;s.vs=0;s.onGround=true;
   }
  }
- if(s.touchdown){s.pitch=Math.max(0,s.pitch-dt*.025);if(s.pitch<.025){s.noseDown=true;s.touchdown.noseTime??=s.elapsed;}if(s.speed<1){s.phase='Complete';s.running=false;}}
- if(s.onGround&&!runwayAt(s.x,s.z)&&s.speed>35&&s.phase!=='Crashed'){s.phase='Crashed';s.crashReason='The aircraft overran the runway.';s.running=false;}
+ if(s.touchdown){s.pitch=Math.max(0,s.pitch-dt*.025);if(s.pitch<.025){if(s.touchdown.noseTime===null&&s.elapsed>s.touchdown.mainTime)recordContact(s,'nosewheel',.18,0,-13);s.noseDown=true;s.touchdown.noseTime??=s.elapsed;}if(s.speed<1){s.phase='Complete';s.running=false;}}
+ if(s.onGround&&!runwayAt(s.x,s.z)&&s.speed>35&&s.running){recordContact(s,'excursion',s.speed/100);crash(s,'The aircraft overran the runway.');}
  s.warning=s.stall?'STALL · LOWER NOSE':!s.gear&&s.y<160&&!s.onGround&&s.vs<-.5?'GEAR · TOO LOW':s.speed*KT>330?'OVERSPEED':s.speed*KT>132&&s.onGround&&!s.touchdown?'ROTATE':'';
  navigation(s);
 }

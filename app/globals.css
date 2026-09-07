@@ -14,3 +14,152 @@
 @media(max-width:500px){.flight-view{height:660px}.mission{top:140px;width:190px}.map-panel{top:140px;width:155px;right:12px}.map-panel .panel-heading{font-size:8px;padding:15px 10px}.nav-stats{gap:8px;padding:10px}.nav-stats span{font-size:6px}.nav-stats b{font-size:14px}.weather-chip{max-width:155px;right:12px;top:410px}.mission{left:12px;padding:13px}.airport-pair strong{font-size:21px}.airport-pair>div>span{font-size:8px}.route-icon span{font-size:7px!important}.phase-list{gap:15px}.flight-tip p{font-size:11px}.scene-title{left:16px}.scene-title h1{font-size:22px}.view-bottom{flex-wrap:wrap;bottom:14px}.flight-buttons{width:100%;justify-content:flex-end}.camera-tabs{width:100%!important}.view-bottom>[data-slot=tabs]{width:100%}.instruments{display:grid;grid-template-columns:1fr 130px 1fr;gap:15px}.attitude{margin:0}.heading-metric{grid-column:1/2}.engine-panel{grid-column:2/4;justify-self:end;width:160px}.metric strong{font-size:30px}.throttle-panel{grid-template-columns:85px 1fr}.lever-buttons{grid-column:1/3}.deck-heading>span:last-child{display:none}.performance{font-size:7px}.settings-dialog{padding:23px!important}.results-dialog{padding:23px!important}}
 
 @media(max-height:820px) and (min-width:851px){.phase-list{flex-direction:row;gap:8px}.phase-list:before{display:none}.phase-list>div>span:nth-child(2){display:none}.phase-list>.current>span:nth-child(2){display:block}.phase-list .active-label{display:none}.phase-list>div{gap:7px}.flight-tip p{font-size:11px}.mission{top:120px}}
+/* Morning scenery: more of the world, quieter flight controls. */
+.morning-ui .view-vignette{background:linear-gradient(180deg,#09223718,transparent 18%,transparent 82%,#09223728)}
+.morning-ui .panel{background:#122c3bc7;border-color:#e4f4fb35;backdrop-filter:blur(16px);box-shadow:0 5px 20px #132c4012}
+.morning-ui .scene-title{text-shadow:0 1px 10px #0c2e4480}
+.morning-ui .scene-title h1{font-size:25px;letter-spacing:-.6px}
+.morning-ui .scene-title .eyebrow{color:#fff0d2}
+.scenery-toggle{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #ffffff25;border-radius:5px;background:#ffffff07;font-size:11px;color:#c6d7df}
+.scenery-toggle[aria-pressed=true]{color:#ceebd9;background:#88c4ad14;border-color:#8bc4af40}
+.scenic-layout .mission{display:none}
+.scenic-layout .scene-title{top:22px;left:24px}
+.scenic-layout .scene-title h1{font-size:22px;margin-top:7px}
+.scenic-layout .scene-title p{font-size:11px}
+.scenic-layout .map-panel{width:210px;top:22px;right:22px;background:#163643cf}
+.scenic-layout .map-panel .nav-canvas{height:145px}
+.scenic-layout .nav-stats{padding:11px 13px;gap:20px}
+.scenic-layout .nav-stats b{font-size:17px}
+.scenic-layout .nav-stats span{font-size:7px}
+.scenic-layout .weather-chip{top:274px;right:22px;color:#fff;text-shadow:0 1px 5px #093953;font-size:8px;background:#15374470;padding:7px 9px;border-radius:4px}
+.scenic-brief{position:absolute;bottom:79px;left:24px;width:285px;padding:14px 16px;background:#102d3abd;border:1px solid #dbeef230;border-radius:7px;backdrop-filter:blur(14px)}
+.scenic-brief .eyebrow{font-size:9px;letter-spacing:1.5px;color:#d9eccc}
+.scenic-brief p{font-size:12px;line-height:1.6;color:#d5e3e9;margin:6px 0 11px}
+.scenic-brief .guided-button{background:#a7c8b71a;border-color:#bad7ca30;color:#d6e9df;font-size:11px;padding:7px 9px}
+.scenic-brief .guided-button svg:last-child{margin-left:auto}
+.scenic-layout .flight-deck{flex:0 0 129px;background:linear-gradient(#15303bed,#10242eed)}
+.scenic-layout .deck-heading{height:23px;font-size:8px}
+.scenic-layout .deck-main{height:106px;padding-bottom:8px}
+.scenic-layout .autopilot-bar{display:none}
+.scenic-layout .metric{padding-top:4px}
+.scenic-layout .metric strong{font-size:32px;margin-top:8px}
+.scenic-layout .scale-ticks{height:5px;margin:6px 0}
+.scenic-layout .attitude{height:93px;flex-basis:135px;border-width:3px}
+.scenic-layout .aircraft-symbol{top:25px;font-size:23px}
+.scenic-layout .attitude-caption{display:none}
+.scenic-layout .engine-panel{padding-top:4px;width:120px}
+.scenic-layout .engine-gauges{margin-top:7px}
+.scenic-layout .throttle-panel{padding-top:3px}
+.scenic-layout .throttle-panel>label{margin-bottom:9px}
+.scenic-layout .lever-buttons{margin-top:9px}
+.scenic-layout .lever-buttons button{padding:6px}
+.scenic-layout .throttle-range{margin-top:7px}
+.scenic-layout .topbar{background:#10242d;flex-basis:58px;height:58px}
+.scenic-layout .brand{font-size:16px}
+.scenic-layout .statusbar{flex-basis:31px;background:#0d1f29}
+@media(max-width:1100px){.scenery-toggle{font-size:10px}.scenic-layout .engine-panel{display:none}.scenic-layout .throttle-panel{width:210px}.scenic-layout .session{display:none}}
+@media(max-width:850px){.scenic-layout .flight-view{height:620px}.scenic-layout .flight-deck{flex:none}.scenic-layout .deck-main{height:auto}.scenic-layout .instruments{flex-wrap:nowrap}.scenic-layout .throttle-panel{width:100%;padding-top:12px}.scenic-layout .lever-buttons{margin-top:0}.scenic-layout .attitude{flex-basis:120px}.scenic-layout .map-panel{top:110px;width:178px}.scenic-layout .weather-chip{top:355px;max-width:175px;right:22px}.scenic-brief{width:250px}.scenery-toggle kbd{display:none}.scenic-layout .metric strong{font-size:28px}}
+@media(max-width:500px){.scenery-toggle{font-size:0;gap:0;padding:8px}.scenery-toggle svg{width:17px;height:17px}.scenic-layout .map-panel{width:155px;top:120px;right:12px}.scenic-layout .scene-title{left:16px}.scenic-layout .scene-title h1{font-size:20px}.scenic-layout .weather-chip{top:360px;right:12px}.scenic-layout .flight-view{height:700px}.scenic-brief{bottom:121px;left:16px;width:calc(100% - 32px);padding:11px 14px}.scenic-brief p{font-size:11px}.scenic-layout .instruments{display:flex;flex-wrap:wrap}.scenic-layout .metric{flex:1;min-width:80px}.scenic-layout .attitude{flex-basis:115px}.scenic-layout .heading-metric{display:none}}
+.asset-status{position:absolute;top:18px;left:50%;transform:translateX(-50%);padding:8px 13px;background:#112e3dcc;border:1px solid #c0dcd733;border-radius:5px;color:#dce9e6;font-size:11px;z-index:4;white-space:nowrap;backdrop-filter:blur(12px)}
+@media(max-width:700px){.asset-status{top:90px;max-width:90%;font-size:10px;white-space:normal;text-align:center}}
+
+/* Premium Topbar Overrides */
+.topbar, .scenic-layout .topbar {
+  background: linear-gradient(180deg, #131d27 0%, #0d151c 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.brand {
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease, text-shadow 0.2s ease;
+}
+.brand:hover {
+  transform: translateY(-1px);
+  text-shadow: 0 4px 15px rgba(242, 166, 90, 0.25);
+}
+.brand svg {
+  filter: drop-shadow(0 2px 6px rgba(242, 166, 90, 0.4));
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+.brand:hover svg {
+  transform: rotate(0deg) scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(242, 166, 90, 0.6));
+}
+.session {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.live-dot {
+  background: rgba(139, 212, 177, 0.1);
+  padding: 6px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 212, 177, 0.2);
+  color: #8bd4b1;
+  font-weight: 600;
+}
+.live-dot:before {
+  box-shadow: 0 0 12px #8bd4b1, 0 0 4px #8bd4b1;
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+@keyframes pulse-dot {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 16px #8bd4b1, 0 0 6px #8bd4b1; }
+  100% { opacity: 0.6; transform: scale(0.9); }
+}
+.icon-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.icon-button:active {
+  transform: translateY(1px);
+}
+.scenery-toggle {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.scenery-toggle:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.scenery-toggle[aria-pressed=true] {
+  background: linear-gradient(135deg, rgba(139, 196, 175, 0.15) 0%, rgba(139, 196, 175, 0.05) 100%);
+  border-color: rgba(139, 196, 175, 0.4);
+  box-shadow: 0 4px 15px rgba(139, 196, 175, 0.15);
+}
+.scenery-toggle[aria-pressed=true]:hover {
+  background: linear-gradient(135deg, rgba(139, 196, 175, 0.25) 0%, rgba(139, 196, 175, 0.1) 100%);
+  border-color: rgba(139, 196, 175, 0.6);
+}
+.scenery-toggle kbd {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.scenery-toggle:hover kbd {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.takeoff-player{position:absolute;right:24px;bottom:82px;width:322px;z-index:15;overflow:hidden}.takeoff-player .panel-heading{height:34px;padding:0 10px}.takeoff-player iframe{display:block;width:320px;height:200px;border:0}.takeoff-player p{font-size:11px;color:#ccdce3;margin:7px 10px;line-height:1.4}@media(max-width:500px){.takeoff-player{right:12px;bottom:120px;max-width:calc(100% - 24px)}.takeoff-player iframe{width:100%}}
+
+.impact-banner{position:absolute;top:24px;left:50%;transform:translateX(-50%);padding:9px 18px;border:1px solid #ffa86188;border-radius:5px;background:#442717dc;color:#ffd3a2;letter-spacing:2px;font-size:12px;pointer-events:none;z-index:20}

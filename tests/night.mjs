@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import * as THREE from 'three';
+const js=ts.transpileModule(fs.readFileSync('lib/flight/night.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace("from 'three'",`from '${import.meta.resolve('three')}'`);
+const {NightEnvironment,nightAmount}=await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+globalThis.document={createElement:()=>({width:0,height:0,getContext:()=>({createRadialGradient:()=>({addColorStop(){}}),fillRect(){}})})};
+assert.equal(nightAmount(12),0);assert.equal(nightAmount(0),1);assert.equal(nightAmount(21),1);assert.equal(nightAmount(6),.5);assert.equal(nightAmount(24),nightAmount(0));
+const scene=new THREE.Scene(),aircraft=new THREE.Group(),camera=new THREE.PerspectiveCamera();scene.add(aircraft);const night=new NightEnvironment(scene,aircraft);
+const s={time:21,weather:'Clear',gear:true,onGround:true};night.update(s,camera,1);
+const spots=[];scene.traverse(o=>{if(o.isSpotLight)spots.push(o);if(o.geometry){for(const v of o.geometry.attributes.position.array)assert.ok(Number.isFinite(v));}});
+assert.equal(spots.length,2);assert.ok(spots.every(l=>l.intensity>0&&l.parent===aircraft&&!l.castShadow));
+s.time=12;night.update(s,camera,1);assert.ok(spots.every(l=>l.intensity===0));
+s.time=21;s.gear=false;s.onGround=false;night.update(s,camera,1);assert.ok(spots.every(l=>l.intensity===0));
+s.gear=true;s.weather='Fog';night.update(s,camera,1);assert.ok(spots.every(l=>l.intensity>0));
+assert.ok(fs.readFileSync('components/flight/Simulator.tsx','utf8').includes("useState<GraphicsQuality>('Performance')"));
+night.dispose();console.log('Night checks passed: day/night transitions, finite geometry, two aircraft-mounted landing lights, gear logic, Performance default.');
