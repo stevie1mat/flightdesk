@@ -29,7 +29,7 @@ export class NightEnvironment {
    for(const dz of [-1200,-500,200,900])for(let x=40;x<135;x+=15)bulb(x,.4,airport+dz,0x37ec9e);
    for(let i=0;i<5;i++){const z=airport-500+i*155;bulb(225,19,z,0xffe1a4);poolPositions.push({x:230,z,size:65,color:0xffe6b0});}
    for(let z=-1450;z<1500;z+=120)poolPositions.push({x:135,z:airport+z,size:10,color:0x467dff});
-   bulb(200,51,airport+1000,0xff3c37);
+   poolPositions.push({x:200,z:airport+1018,size:34,color:0xffd6a0});
   }
   // Street lamps follow the existing city grid; no per-lamp shadow maps.
   for(let row=0;row<110;row++)for(let col=1;col<17;col++){const x=1645+col*310,z=3455-row*310;bulb(x,7,z,0xffcd81);if(row%3===0&&col<9)poolPositions.push({x,z,size:24,color:0xffc376});}

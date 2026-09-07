@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import * as THREE from 'three';
+const source=fs.readFileSync('lib/flight/tower.ts','utf8');
+const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace("from 'three'",`from '${import.meta.resolve('three')}'`).replace("from 'three/addons/utils/BufferGeometryUtils.js'",`from '${import.meta.resolve('three/addons/utils/BufferGeometryUtils.js')}'`);
+const {ControlTower}=await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+const tower=new ControlTower();tower.group.updateMatrixWorld(true);
+const bounds=new THREE.Box3().setFromObject(tower.group),size=bounds.getSize(new THREE.Vector3());assert.ok(size.y>90&&size.y<100);assert.ok(size.x<50&&size.z<60);assert.ok(bounds.min.y>-.01,'tower rests on ground');
+let triangles=0,meshes=0;tower.group.levels[0].object.traverse(o=>{if(!o.isMesh)return;meshes++;for(const value of o.geometry.attributes.position.array)assert.ok(Number.isFinite(value));const p=o.geometry.attributes.position;triangles+=(o.geometry.index?.count??p.count)/3;});assert.ok(meshes<=12,'batched material draw calls');assert.ok(triangles<100000,'bounded detailed geometry');
+const cam=new THREE.PerspectiveCamera();cam.position.set(100,20,100);cam.updateMatrixWorld();tower.group.update(cam);assert.equal(tower.group.getCurrentLevel(),0);assert.ok(tower.group.levels[0].object.visible);cam.position.set(0,20,3000);cam.updateMatrixWorld();tower.group.update(cam);assert.equal(tower.group.getCurrentLevel(),1);assert.equal(tower.group.levels[0].object.visible,false);
+const glass=tower.group.levels[0].object.children.filter(o=>o.material.name.startsWith('blue reflective'));assert.equal(glass.length,4);tower.update(0,.4);assert.ok(glass.every(o=>o.material.emissiveIntensity===0));tower.update(1,.4);assert.ok(glass.every(o=>o.material.emissiveIntensity>0));assert.equal(tower.group.getObjectByName('tower obstruction beacon').visible,true);
+const second=new ControlTower();second.group.position.set(200,0,-24000);second.group.updateMatrixWorld(true);assert.equal(second.group.position.z,-24000);assert.notEqual(second.group,tower.group);
+console.log('Tower checks passed:',{height:size.y,detailMeshes:meshes,triangles,checks:'finite geometry, ground placement, LOD, day/night windows, beacon, independent airport instances'});

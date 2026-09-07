@@ -6,7 +6,7 @@ import { FLAPS, type FlightState } from './physics';
 // 737-800 envelope: 39.47 m length / 35.79 m span. Local nose is -Z.
 // Surface details and systems are modeled for this game, not an engineering CAD replica.
 const D=Math.PI/180;
-const stations=[[-19.735,.045,.035,-.20],[-19.57,.42,.32,-.20],[-19.2,.79,.72,-.08],[-18.55,1.15,1.04,0],[-17.65,1.50,1.44,.03],[-16.45,1.77,1.80,.025],[-14.9,1.88,1.93,0],[-12,1.88,1.95,0],[9.9,1.88,1.95,0],[12.6,1.72,1.78,.12],[15,1.27,1.34,.30],[17.5,.65,.69,.52],[19.3,.13,.17,.63],[19.735,.018,.025,.66]];
+const stations=[[-19.735,.045,.035,-.20],[-19.57,.42,.32,-.20],[-19.2,.79,.72,-.08],[-18.55,1.15,1.04,0],[-17.65,1.50,1.44,.03],[-16.45,1.77,1.80,.025],[-14.9,1.88,1.93,0],[-12,1.88,1.95,0],[9.9,1.88,1.95,0],[12.6,1.72,1.78,.12],[15,1.27,1.34,.30],[17.5,.65,.69,.52],[19.3,.21,.22,.63],[19.735,.125,.135,.66]];
 function profile(z:number){let i=0;while(i<stations.length-2&&stations[i+1][0]<z)i++;const a=stations[i],b=stations[i+1],before=stations[Math.max(0,i-1)],after=stations[Math.min(stations.length-1,i+2)];const t=THREE.MathUtils.clamp((z-a[0])/(b[0]-a[0]),0,1),dz=b[0]-a[0];return [1,2,3].map(k=>{const da=(b[k]-before[k])/(b[0]-before[0]),db=(after[k]-a[k])/(after[0]-a[0]);const v=(2*t**3-3*t*t+1)*a[k]+(t**3-2*t*t+t)*da*dz+(-2*t**3+3*t*t)*b[k]+(t**3-t*t)*db*dz;return k<3?Math.max(.015,v):v;});}
 function geometry(points:number[],indices:number[],uv?:number[]){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(points,3));g.setIndex(indices);if(uv)g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.computeVertexNormals();return g;}
 function loft(rings:number[][][],closed=true){const vertices:number[]=[],indices:number[]=[],uv:number[]=[];const n=rings[0].length;for(let j=0;j<rings.length;j++)for(let i=0;i<n;i++){vertices.push(...rings[j][i]);uv.push(i/(n-1),j/(rings.length-1));if(j<rings.length-1&&i<n-1){const a=j*n+i,b=a+n;indices.push(a,b,a+1,b,b+1,a+1);}}if(closed){for(const j of [0,rings.length-1]){const center=rings[j].reduce((a,p)=>a.map((v,k)=>v+p[k]/n),[0,0,0]);const c=vertices.length/3;vertices.push(...center);uv.push(.5,.5);for(let i=0;i<n-1;i++)j===0?indices.push(c,i+1,i):indices.push(c,j*n+i,j*n+i+1);}}return geometry(vertices,indices,uv);}
@@ -39,7 +39,7 @@ export class Boeing737 {
  private cockpitHidden:THREE.Object3D[]=[];private wings:THREE.Group[]=[];private flaps:THREE.Group[]=[];private ailerons:THREE.Group[]=[];private elevators:THREE.Group[]=[];private spoilers:THREE.Group[]=[];private mains:THREE.Group[]=[];private wheels:THREE.Group[]=[];private fans:THREE.Group[]=[];private reversers:THREE.Group[]=[];private rudder=new THREE.Group();private doors:THREE.Group[]=[];private beacons:THREE.Mesh[]=[];private flapAngle=0;private gearAngle=0;private wheelTravel=0;private fanAngle=0;private wingFlex=0;
  constructor(){this.group.name='Boeing 737-800';
  const paint=new THREE.MeshPhysicalMaterial({color:0xf2f3ee,roughness:.29,metalness:.08,clearcoat:.65,clearcoatRoughness:.2,side:THREE.DoubleSide});const wingPaint=new THREE.MeshStandardMaterial({color:0xd2d8d8,roughness:.45,metalness:.25,side:THREE.DoubleSide});const glass=new THREE.MeshPhysicalMaterial({color:0x172c3b,metalness:.42,roughness:.12,clearcoat:1,side:THREE.DoubleSide});const frame=new THREE.MeshStandardMaterial({color:0xa9b1b3,metalness:.75,roughness:.28,side:THREE.DoubleSide});const rubber=new THREE.MeshStandardMaterial({color:0x161a1d,roughness:.9});const metal=new THREE.MeshStandardMaterial({color:0xb8bfc1,metalness:.9,roughness:.25});const darkMetal=new THREE.MeshStandardMaterial({color:0x343b40,metalness:.7,roughness:.42,side:THREE.DoubleSide});const seam=new THREE.LineBasicMaterial({color:0x858e91,transparent:true,opacity:.45});
- const bodyPaint=boeingPaint(),tailPaint=boeingPaint(true),bluePaint=new THREE.MeshPhysicalMaterial({color:0x08235f,roughness:.31,metalness:.06,clearcoat:.5});
+ const bodyPaint=boeingPaint(),tailPaint=boeingPaint(true),tailplanePaint=boeingPaint('stabilizer'),bluePaint=new THREE.MeshPhysicalMaterial({color:0x08235f,roughness:.31,metalness:.06,clearcoat:.5});
  const rings:number[][][]=[];for(let j=0;j<=220;j++){const z=-19.735+39.47*j/220,[rx,ry,cy]=profile(z);const ring=[];for(let i=0;i<=80;i++){const a=i/80*Math.PI*2;ring.push([rx*Math.sin(a),cy+ry*Math.cos(a),z]);}rings.push(ring);}this.cockpitHidden.push(mesh(this.group,loft(rings),bodyPaint,'smooth fuselage and radome'));
  // Subtle curved seams, without painting a dark stripe through the windows.
  for(const z of [-18.3,-14.5,10.8,15.7]){const [rx,ry,cy]=profile(z);const p=[];for(let i=0;i<100;i++){const a=i/100*Math.PI*2;p.push(new THREE.Vector3((rx+.009)*Math.sin(a),cy+(ry+.009)*Math.cos(a),z));}line(this.group,p,seam,true);}
@@ -94,7 +94,7 @@ export class Boeing737 {
   const upper=(x:number,u:number)=>{const r=rowAt(x),t=5*r[4]*(.2969*Math.sqrt(u)-.126*u-.3516*u*u+.2843*u**3-.1036*u**4);return new THREE.Vector3(side*x,r[1]+r[3]*(t+.015*Math.sin(u*Math.PI))+.045,r[2]+r[3]*u);};
   for(let j=0;j<3;j++){const x=3.1+j*2.2,origin=upper(x,.50),pivot=new THREE.Group();pivot.position.copy(origin);wg.add(pivot);const points=[upper(x,.50),upper(x+1.8,.50),upper(x+1.8,.70),upper(x,.70)].map(p=>p.sub(origin));mesh(pivot,geometry(points.flatMap(p=>p.toArray()),[0,2,1,0,3,2]),wingPaint,'ground spoiler');this.spoilers.push(pivot);}
   // Horizontal tail with a distinct hinged elevator.
-  mesh(this.group,wingGeometry([[.7,1.0,12.4,4.15,.10],[2.8,1.16,13.6,2.9,.09],[7.1,1.5,16.4,1.13,.07]],side),wingPaint,'horizontal stabilizer');
+  mesh(this.group,wingGeometry([[.7,1.0,12.4,4.15,.10],[2.8,1.16,13.6,2.9,.09],[7.1,1.5,16.4,1.13,.07]],side),tailplanePaint,'horizontal stabilizer');
   const elevator=new THREE.Group();elevator.position.set(side*.9,1.03,15.45);this.group.add(elevator);mesh(elevator,wingGeometry([[0,0,0,.86,.06],[5.7,.41,1.56,.47,.06]],side),wingPaint,'elevator');this.elevators.push(elevator);
   // CFM56-style nacelle, with the characteristic flattened lower intake.
   const engine=new THREE.Group();engine.position.set(side*5.05,-1.63,-4.45);wg.add(engine);
@@ -117,7 +117,7 @@ export class Boeing737 {
  // A dorsal fillet and curved fin with a separate rudder.
  const finRings=[[0,1.2,9.3,8.5,.075],[.0,2.4,11.25,6.05,.075],[0,4.3,13.05,4.05,.08],[0,7.9,15.4,1.98,.09],[0,8.65,15.8,1.5,.08]];
  const finGeo=loft(finRings.map(([,y,z,chord,t])=>{const ring=[];for(let i=0;i<=48;i++){const a=i/48*Math.PI*2,u=(1-Math.cos(a))*.5;ring.push([Math.sin(a)*chord*t*.5,y,z+u*chord]);}return ring;}));mesh(this.group,finGeo,tailPaint,'vertical stabilizer');
- this.rudder.position.set(0,2.3,16.70);this.group.add(this.rudder);mesh(this.rudder,loft([[[-.035,0,0],[.035,0,0],[.035,0,.65],[-.035,0,.65],[-.035,0,0]],[[-.02,6.2,0],[.02,6.2,0],[.02,6.2,.48],[-.02,6.2,.48],[-.02,6.2,0]]]),bluePaint,'rudder');
+ this.rudder.position.set(0,2.3,16.70);this.group.add(this.rudder);mesh(this.rudder,loft([[[-.035,0,0],[.035,0,0],[.035,0,.65],[-.035,0,.65],[-.035,0,0]],[[-.02,6.2,0],[.02,6.2,0],[.02,6.2,.48],[-.02,6.2,.48],[-.02,6.2,0]]]),boeingPaint(true,new THREE.Vector3(0,2.3,16.70)),'rudder');
  // Conformal lettering stays legible on both sides without mirrored text.
  const wordmark=new THREE.MeshStandardMaterial({map:aircraftLettering('boeing'),color:0xffffff,transparent:true,alphaTest:.12,roughness:.43,side:THREE.DoubleSide,depthWrite:false});
  const tailMark=wordmark.clone();tailMark.map=aircraftLettering('737');
@@ -125,9 +125,15 @@ export class Boeing737 {
  const labels=new THREE.Group();labels.name='Boeing livery lettering';this.group.add(labels);this.cockpitHidden.push(labels);
  for(const side of [-1,1]){
   const text=mesh(labels,labelSurface(6.5,.8,side,(u,v)=>surfacePoint(-9.7+u,-.52+v,side,.032)),wordmark,'BOEING wordmark');text.castShadow=false;text.receiveShadow=false;
-  const tailSurface=(u:number,v:number)=>{const z=15.3+u,y=3.25+v;let i=0;while(i<finRings.length-2&&finRings[i+1][1]<y)i++;const a=finRings[i],b=finRings[i+1],t=(y-a[1])/(b[1]-a[1]),leading=a[2]+(b[2]-a[2])*t,chord=a[3]+(b[3]-a[3])*t,thickness=a[4]+(b[4]-a[4])*t,f=THREE.MathUtils.clamp((z-leading)/chord,0,1);return new THREE.Vector3(side*(chord*thickness*Math.sqrt(f*(1-f))+.022),y,z);};
-  const label=mesh(labels,labelSurface(2.2,.95,side,tailSurface),tailMark,'737 tail marking');label.castShadow=false;label.receiveShadow=false;
+  const tailSurface=(u:number,v:number)=>{const z=14.7+u,y=3.35+v;let i=0;while(i<finRings.length-2&&finRings[i+1][1]<y)i++;const a=finRings[i],b=finRings[i+1],t=(y-a[1])/(b[1]-a[1]),leading=a[2]+(b[2]-a[2])*t,chord=a[3]+(b[3]-a[3])*t,thickness=a[4]+(b[4]-a[4])*t,f=THREE.MathUtils.clamp((z-leading)/chord,0,1);return new THREE.Vector3(side*(chord*thickness*Math.sqrt(f*(1-f))+.022),y,z);};
+  const label=mesh(labels,labelSurface(3.25,1.25,side,tailSurface),tailMark,'737 tail marking');label.castShadow=false;label.receiveShadow=false;
  }
+ // A dark, recessed APU outlet defines the aft end instead of a needle point.
+ const apu=new THREE.Group();apu.name='APU tail exhaust';apu.position.set(0,.66,19.64);this.group.add(apu);
+ const outlet=mesh(apu,new THREE.CylinderGeometry(.12,.12,.19,32,1,true),darkMetal,'APU exhaust duct');outlet.rotation.x=Math.PI/2;
+ const lip=mesh(apu,new THREE.TorusGeometry(.132,.024,10,40),metal,'APU exhaust rim');lip.position.z=.10;
+ const opening=mesh(apu,new THREE.CircleGeometry(.119,32),new THREE.MeshBasicMaterial({color:0x070c12,side:THREE.DoubleSide}),'APU dark outlet');opening.position.z=.11;
+ for(const side of [-1,1]){const housing=mesh(this.group,new THREE.SphereGeometry(1,20,10),bluePaint,'tailplane root fairing');housing.scale.set(1.42,.28,2.1);housing.position.set(side*.73,.80,14.6);}
  // Retraction pivots preserve wheel proportions throughout gear travel.
  this.group.add(this.gear,this.noseGear);
  const wheel=(parent:THREE.Group,x:number,y:number,z:number,r:number)=>{const assembly=new THREE.Group();assembly.position.set(x,y,z);parent.add(assembly);const tire=mesh(assembly,new THREE.TorusGeometry(r*.72,r*.28,14,32),rubber,'tire');tire.rotation.y=Math.PI/2;const hub=mesh(assembly,new THREE.CylinderGeometry(r*.44,r*.44,r*.57,24),metal,'wheel hub');hub.rotation.z=Math.PI/2;for(const side of [-1,1])for(let k=0;k<8;k++){const a=k/8*Math.PI*2;const bolt=mesh(assembly,new THREE.SphereGeometry(.022,6,4),darkMetal);bolt.position.set(side*r*.3,Math.sin(a)*r*.3,Math.cos(a)*r*.3);}batchChildren(assembly,darkMetal);this.wheels.push(assembly);};

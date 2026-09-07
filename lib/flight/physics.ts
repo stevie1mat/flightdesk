@@ -9,7 +9,7 @@ export const PLANS = [
  {name:'Sound corridor', description:'Direct · 14 NM · ~5 min', points:[{name:'SOUND',x:0,z:-6500},{name:'HARBOR',x:0,z:-13000},{name:'PAE36',x:0,z:-20000}]},
  {name:'Coastal departure', description:'Scenic · 15 NM · ~6 min', points:[{name:'COAST',x:-2400,z:-6000},{name:'HARBOR',x:-1800,z:-11000},{name:'PAE36',x:0,z:-19000}]}
 ];
-export type ContactKind='touchdown'|'nosewheel'|'tailstrike'|'wingstrike'|'belly'|'impact'|'excursion';
+export type ContactKind='touchdown'|'nosewheel'|'nosestrike'|'tailstrike'|'wingstrike'|'belly'|'impact'|'excursion';
 export type ContactEvent={id:number;kind:ContactKind;x:number;y:number;z:number;speed:number;severity:number;paved:boolean};
 export type Phase = 'Preflight'|'Takeoff'|'Climb'|'Cruise'|'Approach'|'Landing'|'Rollout'|'Complete'|'Crashed';
 export type FlightState = ReturnType<typeof initialState>;
@@ -18,9 +18,24 @@ export function initialState(plan=0) {
 }
 export type Input = {pitch:number;roll:number;yaw:number;throttle:number;brake:boolean};
 export const idleInput = ():Input => ({pitch:0,roll:0,yaw:0,throttle:0,brake:false});
+// Shared with rendering: the datum follows the main gear during rotation.
+export function aircraftBodyHeight(s:FlightState){
+ let y=s.y+.91+s.gearPosition*(3.2*Math.sin(s.pitch)+3.5*(Math.cos(s.pitch)-1));
+ if(s.phase==='Crashed'){
+  if(s.contact?.kind==='belly')y-=1.65*(1-Math.exp(-s.impactAge*4));
+  // Keep the frozen impact pose above the surface while the wreck slides.
+  const skin=[[0,-.20,-19.735],[0,-1.04,-18.55],[0,-1.8,-16.45],[0,-1.95,-12],[0,-1.95,9.9],[0,-1.04,15],[0,-.17,17.5],[-16.6,.33,4.48],[16.6,.33,4.48],[-5.05,-2.54,-6.5],[5.05,-2.54,-6.5]];
+  if(s.gearPosition>.9)skin.push([0,-3.5,-13],[-3.17,-3.5,3.2],[3.17,-3.5,3.2]);
+  const low=Math.min(...skin.map(([x,py,z])=>rotatedHeight(s,x,py,z)));
+  y=Math.max(y,.23-low);
+ }
+ return y;
+}
+function rotatedHeight(s:FlightState,x:number,y:number,z:number){return (-x*Math.sin(s.bank)+y*Math.cos(s.bank))*Math.cos(s.pitch)-z*Math.sin(s.pitch);}
+export function aircraftPointHeight(s:FlightState,x:number,y:number,z:number){return aircraftBodyHeight(s)+rotatedHeight(s,x,y,z);}
 export function runwayAt(x:number,z:number) {return Math.abs(x)<30 && ((z<1500&&z>-1500)||(z<-23500&&z>-26500));}
 function recordContact(s:FlightState,kind:ContactKind,severity:number,localX=0,localZ=0){s.contact={id:++s.contactSequence,kind,x:s.x+localX*Math.cos(s.heading)-localZ*Math.sin(s.heading),y:.3,z:s.z+localX*Math.sin(s.heading)+localZ*Math.cos(s.heading),speed:s.speed,severity:clamp(severity,.15,1),paved:runwayAt(s.x,s.z)};}
-function crash(s:FlightState,reason:string){s.phase='Crashed';s.crashReason=reason;s.running=false;s.impactAge=0;s.onGround=true;s.vs=0;s.y=2.8;}
+function crash(s:FlightState,reason:string){s.phase='Crashed';s.crashReason=reason;s.running=false;s.impactAge=0;s.onGround=true;s.vs=0;s.y=Math.max(2.8,s.y);}
 export function navigation(s:FlightState) {
  const remaining=Math.hypot(s.x,s.z+23700);
  s.distance=remaining/1852;s.eta=s.speed>10?remaining/s.speed:0;
@@ -74,7 +89,7 @@ export function step(s:FlightState,input:Input,dt:number) {
  s.controlPitch=pitch;s.controlRoll=roll;s.controlYaw=yaw;
  s.bank=clamp(s.bank+(roll*.55-s.bank*.25)*dt,-1.15,1.15);
  s.pitch=clamp(s.pitch+(pitch*.20-s.pitch*.045)*dt,-.35,.38);
- if(s.onGround){s.bank*=Math.exp(-dt*4);if(s.speed<65&&!s.touchdown)s.pitch=Math.min(s.pitch,.015);s.heading+=yaw*.22*clamp(s.speed/25,0,1)*dt;}
+ if(s.onGround){s.bank*=Math.exp(-dt*4);s.pitch=Math.max(0,s.pitch);if(s.speed<65&&!s.touchdown)s.pitch=Math.min(s.pitch,.015);s.heading+=yaw*.22*clamp(s.speed/25,0,1)*dt;}
  else{s.heading+=(9.81*Math.tan(s.bank)/Math.max(s.speed,30)+yaw*.05)*dt;}
  s.heading=wrap(s.heading);
  const flap=FLAPS[s.flaps];const mass=62000;
@@ -103,9 +118,9 @@ export function step(s:FlightState,input:Input,dt:number) {
  if(s.running&&s.phase==='Preflight'&&s.speed>1)s.phase='Takeoff';
  // Contact points follow the same pitch/roll pose as the rendered 737.
  if(!s.touchdown&&s.speed>8){
-  const bodyY=s.y+.91+s.gearPosition*(3.2*Math.sin(s.pitch)+3.5*(Math.cos(s.pitch)-1));
-  const height=(x:number,y:number,z:number)=>bodyY+(-x*Math.sin(s.bank)+y*Math.cos(s.bank))*Math.cos(s.pitch)-z*Math.sin(s.pitch);
+  const height=(x:number,y:number,z:number)=>aircraftPointHeight(s,x,y,z);
   const lowWing=s.bank>0?16.6:-16.6;
+  if(!s.onGround&&s.pitch<-.04&&(height(0,-1.04,-18.55)<.23||(s.gearPosition>.9&&height(0,-3.5,-13)<.21))){recordContact(s,'nosestrike',.4+Math.abs(s.vs)/8,0,-17);crash(s,'The aircraft struck the runway nose first.');navigation(s);return;}
   const kind:ContactKind|null=s.onGround&&s.gearPosition<.55?'belly':height(0,-.5,17)<.23?'tailstrike':height(lowWing,.43,4.48)<.23?'wingstrike':null;
   if(kind){recordContact(s,kind,.4+s.speed/180,kind==='wingstrike'?lowWing:0,kind==='tailstrike'?17:kind==='wingstrike'?4.48:0);crash(s,kind==='tailstrike'?'The tail struck the ground during rotation.':kind==='wingstrike'?'A wing struck the ground.':'The landing gear collapsed or retracted during the ground roll.');navigation(s);return;}
  }
